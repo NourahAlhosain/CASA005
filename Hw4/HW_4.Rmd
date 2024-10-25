@@ -1,0 +1,82 @@
+---
+title: "HW4_V1"
+output: html_document
+date: "2024-10-22"
+---
+
+```{r}
+library(here)
+library(dplyr)  # For selecting specific columns
+library(readr)  # For reading the CSV file
+library(sf)
+library(countrycode) # for joining the diff datasets
+
+```
+1- read the "global gender inequality data" and calculate the difference in inequality between 2010 and 2019
+
+```{r}
+
+# Read the CSV file and select specific columns
+global_gender_inequality_data <- read.csv(here("HDR23-24_Composite_indices_complete_time_series.csv"), 
+                                           fileEncoding = "UTF-8") %>%
+  select(gii_2010, gii_2019, iso3, country)
+
+
+# Calculate the difference and drop rows where diff_gii is NA
+global_gender_inequality_data <- global_gender_inequality_data %>%
+  mutate(diff_gii = gii_2019 - gii_2010) %>%
+  filter(!is.na(diff_gii))
+
+head(global_gender_inequality_data,4)
+
+```
+
+
+2- Read the countries spatial data and add the global gender inequality data to it. Here, we needed to use "countrycode" package to find a mutual ID for the join
+
+```{r}
+#read the countries geojson
+countries_data <- st_read(here("World_Countries_(Generalized)_9029012925078512962.geojson"))
+
+# the global_gender_inequality_data has ISO3 codes and the countries_data has ISO2. We can use countrycode library to join and have a standard ID.
+
+countries_data <- countries_data %>%
+  mutate(iso3 = countrycode(ISO, origin = "iso2c", destination = "iso3c"),
+         unmatched = is.na(iso3))
+
+# Check the data
+head(countries_data,4)
+
+```
+
+
+```{r}
+# Left join countries_data and global_gender_inequality_data based on iso3 column
+merged_data <- countries_data %>%
+  left_join(global_gender_inequality_data, by = "iso3")
+
+
+head(merged_data,4)
+
+```
+Check our join and make sure all rows were matched: 
+
+```{r}
+# Check for unmatched rows in global_gender_inequality_data
+unmatched_rows_gii <- global_gender_inequality_data %>%
+  filter(!iso3 %in% merged_data$iso3)
+
+# Count unmatched rows
+unmatched_count_gii <- nrow(unmatched_rows_gii)
+
+# Print the number of unmatched rows in global_gender_inequality_data
+print(unmatched_count_gii)
+
+
+```
+
+
+
+
+
+
