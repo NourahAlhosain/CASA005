@@ -76,6 +76,22 @@ unmatched_count_gii <- nrow(unmatched_rows_gii)
 print(unmatched_count_gii)
 ```
 
+# plot interactive map
+library(tmap)
 
+tmap_mode("view")
 
+breaks <- c(min(merged_data$diff_gii),
+            -0.1, -0.05, 0, 0.05, 0.1,
+            max(merged_data$diff_gii)
+)
+
+tm_shape(merged_data) + 
+  tm_polygons("diff_gii", 
+              breaks = breaks,
+              palette = "RdYlBu",
+              title = "GII Change (2019-2010)",
+              popup.vars = c("Country" = "COUNTRY", 
+                           "GII Change" = "diff_gii")
+)
 
